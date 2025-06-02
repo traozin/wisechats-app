@@ -1,20 +1,4 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: laravel_app
-    restart: unless-stopped
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    networks:
-      - laravel_network
-
   db:
     image: postgres:15
     environment:
