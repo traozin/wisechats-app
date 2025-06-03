@@ -9,9 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\OrderItem;
 
 class Order extends Model {
-    public $incrementing = false;
-    protected $keyType = 'string';
-
     protected $fillable = ['user_id', 'total'];
 
     public function user(): BelongsTo {

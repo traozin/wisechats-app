@@ -12,7 +12,7 @@ return new class extends Migration {
         Schema::create('orders', function (Blueprint $table) {
             $table->id()->primary();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
-            $table->decimal('total', 10, 2);
+            $table->decimal('total', 10, 2)->nullable();
             $table->timestamps();
         });
     }
