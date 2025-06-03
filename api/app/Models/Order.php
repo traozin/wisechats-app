@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
+
+use App\Models\OrderItem;
+
+class Order extends Model {
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = ['user_id', 'total'];
+
+    protected static function boot() {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $model->id = (string) Str::uuid();
+        });
+    }
+
+    public function user(): BelongsTo {
+        return $this->belongsTo(User::class);
+    }
+
+    public function items(): HasMany {
+        return $this->hasMany(OrderItem::class);
+    }
+}
