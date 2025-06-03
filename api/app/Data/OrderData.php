@@ -8,6 +8,7 @@ use Spatie\LaravelData\Attributes\Validation\Uuid;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\DataCollection;
 
 use App\Data\OrderItemData;
 
@@ -20,7 +21,7 @@ class OrderData extends Data {
         #[Required]
         #[Min(1)]
         #[DataCollectionOf(OrderItemData::class)]
-        public array $items
+        public DataCollection $items
     ) {
     }
 }
