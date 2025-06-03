@@ -3,9 +3,10 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use App\Exceptions\Handler as AppHandler;
+use App\Models\OrderItem;
+use App\Observers\OrderItemObserver;
 
 class AppServiceProvider extends ServiceProvider {
     /**
@@ -22,6 +23,6 @@ class AppServiceProvider extends ServiceProvider {
      * Bootstrap any application services.
      */
     public function boot(): void {
-        //
+        OrderItem::observe(OrderItemObserver::class);
     }
 }
