@@ -131,7 +131,6 @@ class OrderService {
                 'subtotal' => $subtotal,
             ];
 
-            $product->stock -= $item->quantity;
             $product->save();
         }
 
@@ -148,7 +147,6 @@ class OrderService {
         foreach ($order->items as $oldItem) {
             $oldProduct = Product::find($oldItem->product_id);
             if ($oldProduct) {
-                $oldProduct->stock += $oldItem->quantity;
                 $oldProduct->save();
             }
         }
