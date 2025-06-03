@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\AuthenticationException;
 
 class Handler extends ExceptionHandler {
     /**
@@ -47,5 +48,13 @@ class Handler extends ExceptionHandler {
         }
 
         return parent::render($request, $exception);
+    }
+
+    protected function unauthenticated($request, AuthenticationException $exception) {
+        if ($request->is('api/v1/*')) {
+            return response()->json(['message' => 'Não autenticado.'], 401);
+        }
+
+        return parent::unauthenticated($request, $exception);
     }
 }
