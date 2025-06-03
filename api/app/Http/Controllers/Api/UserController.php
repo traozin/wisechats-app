@@ -4,50 +4,84 @@ namespace App\Http\Controllers\Api;
 
 use App\Data\UserData;
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class UserController extends Controller {
-    public function index() {
-        return User::all();
+
+    protected UserService $userService;
+
+    public function __construct(UserService $userService) {
+        $this->userService = $userService;
     }
 
-    public function store(UserData $data) {
-        $user = User::create([
-            'name' => $data->name,
-            'email' => $data->email,
-            'password' => Hash::make($data->password),
-        ]);
-
-        return response()->json($user, 201);
+    /**
+     * GET /api/users
+     */
+    public function index(): JsonResponse {
+        $users = $this->userService->listUsers();
+        return response()->json($users);
     }
 
-    public function show(string $id) {
-        $user = User::findOrFail($id);
-        return response()->json($user);
+    /**
+     * POST /api/users
+     */
+    public function store(UserData $data): JsonResponse {
+        try {
+            $user = $this->userService->createUser($data);
+            return response()->json($user, 201);
+        } catch (Throwable $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 400);
+        }
     }
 
-    public function update(UserData $data, string $id) {
-        $user = User::findOrFail($id);
-
-        $user->update([
-            'name' => $data->name,
-            'email' => $data->email,
-            'password' => Hash::make($data->password),
-        ]);
-
-        $token = $user->createToken('wise_token')->plainTextToken;
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ], 201);
+    /**
+     * GET /api/users/{id}
+     */
+    public function show(string $id): JsonResponse {
+        try {
+            $user = $this->userService->getUser($id);
+            return response()->json($user);
+        } catch (Throwable $e) {
+            return response()->json([
+                'error' => 'Usuário não encontrado.',
+            ], 404);
+        }
     }
 
-    public function destroy(string $id) {
-        $user = User::findOrFail($id);
-        $user->delete();
+    /**
+     * PUT /api/users/{id}
+     */
+    public function update(UserData $data, string $id): JsonResponse {
+        try {
+            $result = $this->userService->updateUser($data, $id);
+            return response()->json([
+                'user' => $result['user'],
+                'token' => $result['token'],
+            ], 200);
+        } catch (Throwable $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
 
-        return response()->json(['message' => 'Usuário deletado com sucesso.']);
+    /**
+     * DELETE /api/users/{id}
+     */
+    public function destroy(string $id): JsonResponse {
+        try {
+            $this->userService->deleteUser($id);
+            return response()->json([
+                'message' => 'Usuário deletado com sucesso.',
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'error' => 'Usuário não encontrado ou não pôde ser deletado.',
+            ], 404);
+        }
     }
 }
