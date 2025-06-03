@@ -4,13 +4,18 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use App\Exceptions\Handler as AppHandler;
 
 class AppServiceProvider extends ServiceProvider {
     /**
      * Register any application services.
      */
     public function register(): void {
-        //
+        $this->app->singleton(
+            ExceptionHandler::class,
+            AppHandler::class
+        );
     }
 
     /**
@@ -19,8 +24,8 @@ class AppServiceProvider extends ServiceProvider {
     public function boot(): void {
         Route::prefix('api/v1')
             ->middleware([
-                'api'
-            ])
+                    'api'
+                ])
             ->group(base_path('routes/api.php'));
     }
 }
