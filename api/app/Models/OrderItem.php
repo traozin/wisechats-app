@@ -8,17 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Order;
 use App\Models\Product;
 
-class OrderItem extends Model
-{
+class OrderItem extends Model {
     protected $fillable = ['order_id', 'product_id', 'quantity', 'unit_price', 'subtotal'];
 
-    public function order(): BelongsTo
-    {
+    public function order(): BelongsTo {
         return $this->belongsTo(Order::class);
     }
 
-    public function product(): BelongsTo
-    {
+    public function product(): BelongsTo {
         return $this->belongsTo(Product::class);
     }
 }
