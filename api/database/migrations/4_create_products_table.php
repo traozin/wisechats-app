@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void {
         Schema::create('products', function (Blueprint $table) {
-            $table->id()->primary();
+            $table->id();
             $table->string('name');
             $table->integer('stock')->default(0);
             $table->float('price', 8)->default(0.00);

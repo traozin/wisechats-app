@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void {
         Schema::create('orders', function (Blueprint $table) {
-            $table->id()->primary();
+            $table->id();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->decimal('total', 10, 2)->nullable();
             $table->timestamps();
