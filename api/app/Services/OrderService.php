@@ -43,6 +43,7 @@ class OrderService {
                     'product_id' => $product->id,
                     'quantity' => $item->quantity,
                     'unit_price' => $product->price,
+                    'subtotal' => $subtotal,
                 ];
             }
 
@@ -80,6 +81,7 @@ class OrderService {
                     'product_id' => $product->id,
                     'quantity' => $item->quantity,
                     'unit_price' => $product->price,
+                    'subtotal' => $subtotal,
                 ]);
             }
 
