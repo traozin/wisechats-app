@@ -55,14 +55,21 @@ class AuthApiTest extends TestCase {
 
     public function test_it_logs_out_and_invalidates_tokens() {
         $user = User::factory()->create();
-        $token = $user->createToken('wise_token')->plainTextToken;
+        $plainText = $user->createToken('wise_token')->plainTextToken;
 
-        $this->withHeader('Authorization', "Bearer {$token}")
+        $tokenInstance = $user->tokens()->latest()->first();
+        $tokenId = $tokenInstance->id;
+
+        $this->withHeader('Authorization', "Bearer {$plainText}")
             ->postJson('/api/v1/logout')
             ->assertStatus(200)
             ->assertJson(['message' => 'Desconectado com sucesso']);
 
-        $this->withHeader('Authorization', "Bearer {$token}")
+        $this->assertDatabaseMissing('personal_access_tokens', [
+            'id' => $tokenId,
+        ]);
+
+        $this->withHeader('Authorization', "Bearer {$plainText}")
             ->getJson('/api/v1/me')
             ->assertStatus(401);
     }
