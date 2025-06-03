@@ -4,32 +4,81 @@ namespace App\Http\Controllers\Api;
 
 use App\Data\ProductData;
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+use App\Services\ProductService;
+use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class ProductController extends Controller {
-    public function index() {
-        return Product::all();
+    
+    protected ProductService $productService;
+
+    public function __construct(ProductService $productService) {
+        $this->productService = $productService;
     }
 
-    public function store(ProductData $data) {
-        $product = Product::create($data->toArray());
-        return response()->json($product, 201);
+    /**
+     * GET /api/products
+     */
+    public function index(): JsonResponse {
+        $products = $this->productService->listProducts();
+        return response()->json($products);
     }
 
-    public function show(string $id) {
-        $product = Product::findOrFail($id);
-        return response()->json($product);
+    /**
+     * POST /api/products
+     */
+    public function store(ProductData $data): JsonResponse {
+        try {
+            $product = $this->productService->createProduct($data);
+            return response()->json($product, 201);
+        } catch (Throwable $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 400);
+        }
     }
 
-    public function update(ProductData $data, string $id) {
-        $product = Product::findOrFail($id);
-        $product->update($data->toArray());
-        return response()->json($product);
+    /**
+     * GET /api/products/{id}
+     */
+    public function show(string $id): JsonResponse {
+        try {
+            $product = $this->productService->getProduct($id);
+            return response()->json($product);
+        } catch (Throwable $e) {
+            return response()->json([
+                'error' => 'Produto não encontrado.',
+            ], 404);
+        }
     }
 
-    public function destroy(string $id) {
-        $product = Product::findOrFail($id);
-        $product->delete();
-        return response()->json(['message' => 'Produto deletado com sucesso.']);
+    /**
+     * PUT /api/products/{id}
+     */
+    public function update(ProductData $data, string $id): JsonResponse {
+        try {
+            $product = $this->productService->updateProduct($data, $id);
+            return response()->json($product);
+        } catch (Throwable $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * DELETE /api/products/{id}
+     */
+    public function destroy(string $id): JsonResponse {
+        try {
+            $this->productService->deleteProduct($id);
+            return response()->json([
+                'message' => 'Produto deletado com sucesso.',
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'error' => 'Produto não encontrado ou não pôde ser deletado.',
+            ], 404);
+        }
     }
 }
