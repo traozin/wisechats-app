@@ -9,12 +9,13 @@ use Exception;
 use Illuminate\Database\Eloquent\Collection;
 
 class UserService {
+
     /**
      * Retorna todos os usuários.
      *
      * @return Collection
      */
-    public function listUsers() {
+    public function listUsers(): Collection {
         return User::all();
     }
 
