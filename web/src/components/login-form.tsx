@@ -1,14 +1,53 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+"use client";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { api } from "@/lib/api";
+import { useForm } from "react-hook-form";
+import { UserData } from "@/types/user";
+import Cookie from "js-cookie";
+
+type LoginFormData = {
+  email: string;
+  password: string;
+};
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+  async function onSubmit(data: LoginFormData) {
+    try {
+      const response: UserData = await api.post("/login", data);
+
+      if (!response) {
+        throw new Error("Erro ao fazer login", response);
+      }
+
+      Cookie.set("jwt-wisecharts", response.data.token);
+      alert("Login realizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+    }
+  }
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className={cn("flex flex-col gap-6", className)}
+      {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Entrar na sua conta</h1>
         <p className="text-muted-foreground text-sm text-balance">
@@ -18,19 +57,38 @@ export function LoginForm({
       <div className="grid gap-6">
         <div className="grid gap-3">
           <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" placeholder="m@exemplo.com" required />
+          <Input
+            id="email"
+            type="email"
+            placeholder="m@exemplo.com"
+            {...register("email", {
+              required: "Email é obrigatório",
+              pattern: {
+                value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                message: "Email inválido",
+              },
+            })}
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm">{errors.email.message}</p>
+          )}
         </div>
         <div className="grid gap-3">
-          <div className="flex items-center">
-            <Label htmlFor="password">Senha</Label>
-            <a
-              href="#"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
-            >
-              Esqueceu sua senha?
-            </a>
-          </div>
-          <Input id="password" type="password" required />
+          <Label htmlFor="password">Senha</Label>
+          <Input
+            id="password"
+            type="password"
+            {...register("password", {
+              required: "Senha é obrigatória",
+              minLength: {
+                value: 6,
+                message: "A senha deve ter pelo menos 6 caracteres",
+              },
+            })}
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm">{errors.password.message}</p>
+          )}
         </div>
         <Button type="submit" className="w-full">
           Entrar
@@ -43,5 +101,5 @@ export function LoginForm({
         </a>
       </div>
     </form>
-  )
+  );
 }
