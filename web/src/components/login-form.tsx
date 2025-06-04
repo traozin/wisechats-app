@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useForm } from "react-hook-form";
 import { UserData } from "@/types/user";
 import Cookie from "js-cookie";
+import { useRouter } from "next/navigation";
 
 type LoginFormData = {
   email: string;
@@ -28,6 +29,9 @@ export function LoginForm({
       password: "",
     },
   });
+
+  const router = useRouter();
+
   async function onSubmit(data: LoginFormData) {
     try {
       const response: UserData = await api.post("/login", data);
@@ -37,7 +41,7 @@ export function LoginForm({
       }
 
       Cookie.set("jwt-wisecharts", response.data.token);
-      alert("Login realizado com sucesso!");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Erro ao fazer login:", error);
     }
