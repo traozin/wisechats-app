@@ -41,7 +41,7 @@ export function LoginForm({
       }
 
       Cookie.set("jwt-wisecharts", response.data.token);
-      router.push("/dashboard");
+      router.push("/home");
     } catch (error) {
       console.error("Erro ao fazer login:", error);
     }
