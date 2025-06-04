@@ -79,7 +79,7 @@ export function RegisterForm() {
       }
 
       Cookie.set("jwt-wisecharts", response.data.token);
-      alert("Conta criada com sucesso!");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Erro no registro:", error);
     }
