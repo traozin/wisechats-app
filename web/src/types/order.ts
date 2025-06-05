@@ -10,7 +10,7 @@ export interface Orders {
 export interface Item {
   id: string;
   order_id: string;
-  product_id: string;
+  product_id: number;
   quantity: number;
   unit_price: number;
   subtotal: number;
