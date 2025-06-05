@@ -1,20 +1,8 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import {
-  CheckCircle2Icon,
-  ClockIcon,
-  EyeIcon,
-  FilterIcon,
-  PackageIcon,
-  SearchIcon,
-  TruckIcon,
-  XCircleIcon,
-} from "lucide-react";
+import { EyeIcon, PackageIcon, SearchIcon } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,13 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {
   Sheet,
   SheetClose,
@@ -50,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { Orders } from "@/types/orders";
 import Cookie from "js-cookie";
@@ -77,13 +59,13 @@ export function OrdersList() {
     fetchOrders();
   }, []);
 
-    const filteredOrders = orders.filter((order) => {
-      const matchesSearch =
-        String(order.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(order.user_id).toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredOrders = orders.filter((order) => {
+    const matchesSearch =
+      String(order.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(order.user_id).toLowerCase().includes(searchTerm.toLowerCase());
 
-      return matchesSearch;
-    });
+    return matchesSearch;
+  });
 
   const totalOrders = orders.length;
   const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
