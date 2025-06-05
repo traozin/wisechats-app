@@ -29,7 +29,14 @@ import {
 } from "@/components/ui/table";
 
 import React, { useState, useEffect } from "react";
-import { EditIcon, EyeIcon, PackageIcon, PlusIcon, SearchIcon } from "lucide-react";
+import {
+  EditIcon,
+  EyeIcon,
+  PackageIcon,
+  PlusIcon,
+  SearchIcon,
+  TrashIcon,
+} from "lucide-react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -39,6 +46,7 @@ import { api } from "@/lib/api";
 import { Orders } from "@/types/order";
 import Cookie from "js-cookie";
 import { OrderForm } from "@/components/order-form";
+import { toast } from "react-toastify";
 
 export function OrdersList() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,6 +56,8 @@ export function OrdersList() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState<Orders | null>(null);
+  const [orderToDelete, setOrderToDelete] = React.useState<Orders | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
 
   const fetchOrders = async () => {
     try {
@@ -83,6 +93,26 @@ export function OrdersList() {
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
     setOrderToEdit(null);
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    setIsDeleting(orderId);
+
+    try {
+      await api.delete(`/orders/${orderId}`, {
+        headers: {
+          Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
+        },
+      });
+
+      fetchOrders();
+      toast.success("Pedido excluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao deletar pedido:", error);
+      toast.error("Erro ao excluir pedido. Tente novamente.");
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -164,7 +194,7 @@ export function OrdersList() {
                       <TableHead>Data</TableHead>
                       <TableHead>Items</TableHead>
                       <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="w-10"></TableHead>
+                      <TableHead className="w-24">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -301,6 +331,15 @@ export function OrdersList() {
                               <EditIcon className="h-4 w-4" />
                               <span className="sr-only">Editar pedido</span>
                             </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={isDeleting === order.id}
+                              onClick={() => setOrderToDelete(order)}>
+                              <TrashIcon className="h-4 w-4" />
+                              <span className="sr-only">Excluir pedido</span>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -343,6 +382,67 @@ export function OrdersList() {
             onSave={handleOrderSaved}
             onCancel={() => setIsEditModalOpen(false)}
           />
+        </SheetContent>
+      </Sheet>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <Sheet open={!!orderToDelete} onOpenChange={() => setOrderToDelete(null)}>
+        <SheetContent className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Confirmar Exclusão</SheetTitle>
+            <SheetDescription>
+              Tem certeza que deseja excluir este pedido?
+            </SheetDescription>
+          </SheetHeader>
+
+          {orderToDelete && (
+            <div className="py-4 space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="space-y-2">
+                  <p>
+                    <strong>Pedido:</strong> {orderToDelete.id}
+                  </p>
+                  <p>
+                    <strong>Cliente:</strong> {orderToDelete.user_id}
+                  </p>
+                  <p>
+                    <strong>Total:</strong>{" "}
+                    {orderToDelete.total.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="text-sm text-destructive">
+                  ⚠️ Esta ação não pode ser desfeita. O pedido será removido
+                  permanentemente do sistema.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <SheetFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setOrderToDelete(null)}
+              disabled={isDeleting === orderToDelete?.id}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (orderToDelete) {
+                  handleDeleteOrder(orderToDelete.id);
+                  setOrderToDelete(null);
+                }
+              }}
+              disabled={isDeleting === orderToDelete?.id}>
+              {isDeleting === orderToDelete?.id ? "Excluindo..." : "Excluir Pedido"}
+            </Button>
+          </SheetFooter>
         </SheetContent>
       </Sheet>
     </div>
