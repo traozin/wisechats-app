@@ -124,12 +124,14 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
             Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
           },
         });
+        toast.success("Pedido atualizado com sucesso!");
       } else {
         await api.post("/orders", orderData, {
           headers: {
             Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
           },
         });
+        toast.success("Pedido criado com sucesso!");
       }
 
       onSave();
