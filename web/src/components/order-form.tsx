@@ -13,6 +13,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import {
   Select,
@@ -28,6 +29,9 @@ import type { Orders, Product } from "@/types/order";
 import { User } from "@/types/user";
 import Cookie from "js-cookie";
 import { useEffect, useState } from "react";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "react-toastify";
 
 interface OrderFormProps {
   order?: Orders | null;
@@ -35,16 +39,34 @@ interface OrderFormProps {
   onCancel: () => void;
 }
 
-type OrderFormData = {
-  user_id: string;
-  items: {
-    product_id: string;
-    quantity: number;
-    unit_price: number;
-  }[];
-};
+const orderFormSchema = z.object({
+  user_id: z.string().min(1, "Selecione um cliente"),
+  items: z
+    .array(
+      z.object({
+        product_id: z.coerce.number().min(1, "Produto obrigatório"),
+        quantity: z.coerce.number().int().min(1, "Informe a quantidade"),
+        unit_price: z.coerce.number().min(0, "Valor inválido"),
+      })
+    )
+    .min(1, "Adicione pelo menos um item"),
+});
+
+type OrderFormData = z.infer<typeof orderFormSchema>;
 
 export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
+  const form = useForm({
+    resolver: zodResolver(orderFormSchema),
+    defaultValues: {
+      user_id: order?.user_id || "",
+      items: order?.items?.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      })) || [{ product_id: 0, quantity: 1, unit_price: 0 }],
+    },
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const isEditing = !!order;
 
@@ -79,17 +101,6 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
     fetchData();
   }, []);
 
-  const form = useForm<OrderFormData>({
-    defaultValues: {
-      user_id: order?.user_id || "",
-      items: order?.items?.map((item) => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-      })) || [{ product_id: "", quantity: 1, unit_price: 0 }],
-    },
-  });
-
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items",
@@ -122,15 +133,25 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
       }
 
       onSave();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar pedido:", error);
+
+      if (error.response && error.response.data) {
+        const apiError = error.response.data;
+
+        toast.error(
+          apiError.error || "Erro desconhecido ao salvar o pedido."
+        );
+      } else {
+        toast.error("Erro inesperado. Tente novamente mais tarde.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const addItem = () => {
-    append({ product_id: "", quantity: 1, unit_price: 0 });
+    append({ product_id: 0, quantity: 1, unit_price: 0 });
   };
 
   const removeItem = (index: number) => {
@@ -149,7 +170,7 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
   const calculateTotal = () => {
     const items = form.watch("items");
     return items.reduce(
-      (total, item) => total + item.quantity * item.unit_price,
+      (total, item) => total + Number(item.quantity) * Number(item.unit_price),
       0
     );
   };
@@ -183,6 +204,7 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -235,7 +257,7 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
                                 field.onChange(value);
                                 handleProductChange(index, value);
                               }}
-                              defaultValue={field.value}>
+                              defaultValue={String(field.value)}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione um produto" />
@@ -256,6 +278,7 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -279,33 +302,22 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
                                 className="w-full"
                               />
                             </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.unit_price`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Preço Unitário</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                {...field}
-                                onChange={(e) =>
-                                  field.onChange(
-                                    Number.parseFloat(e.target.value) || 0
-                                  )
-                                }
-                                className="w-full"
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                      <div className="flex flex-col justify-end">
+                        <Label>Preço Unitário</Label>
+                        <span className="text-base font-medium mt-2">
+                          {Number(
+                            form.watch(`items.${index}.unit_price`)
+                          ).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
