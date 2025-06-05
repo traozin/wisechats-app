@@ -2,12 +2,12 @@ export interface Orders {
   id: string;
   user_id: string;
   total: number;
-  items: Array<Items>;
+  items: Array<Item>;
   created_at: Date;
   updated_at: Date;
 }
 
-export interface Items {
+export interface Item {
   id: string;
   order_id: string;
   product_id: string;
