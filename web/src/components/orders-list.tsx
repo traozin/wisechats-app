@@ -124,7 +124,10 @@ export function OrdersList() {
   });
 
   const totalOrders = orders.length;
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalRevenue = orders.reduce(
+    (sum, order) => sum + Number(order.total),
+    0
+  );
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
