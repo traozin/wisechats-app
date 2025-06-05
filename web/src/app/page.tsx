@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/login-form"
+import Image from "next/image"
 
 export default function Home() {
   return (
@@ -11,7 +12,9 @@ export default function Home() {
         </div>
       </div>
       <div className="bg-muted relative hidden lg:block">
-        <img
+        <Image
+          width={600}
+          height={800} 
           src="/placeholder.svg"
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
