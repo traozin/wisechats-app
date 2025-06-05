@@ -1,9 +1,5 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
-import { EyeIcon, PackageIcon, SearchIcon } from "lucide-react";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,8 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 import {
   Sheet,
@@ -24,6 +18,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+
 import {
   Table,
   TableBody,
@@ -32,18 +27,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+import React, { useState, useEffect } from "react";
+import { EditIcon, EyeIcon, PackageIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
-import { Orders } from "@/types/orders";
+import { Orders } from "@/types/order";
 import Cookie from "js-cookie";
+import { OrderForm } from "@/components/order-form";
 
 export function OrdersList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Orders | null>(null);
   const [orders, setOrders] = useState<Orders[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [orderToEdit, setOrderToEdit] = useState<Orders | null>(null);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = async () => {
     try {
+      setIsLoading(true);
       const { data } = await api.get<Orders[]>("/orders", {
         headers: {
           Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
@@ -52,12 +60,30 @@ export function OrdersList() {
       setOrders(data);
     } catch (error) {
       console.error("Erro ao buscar pedidos:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const handleCreateOrder = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleEditOrder = (order: Orders) => {
+    setOrderToEdit(order);
+    setIsEditModalOpen(true);
+  };
+
+  const handleOrderSaved = () => {
+    fetchOrders();
+    setIsCreateModalOpen(false);
+    setIsEditModalOpen(false);
+    setOrderToEdit(null);
+  };
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -83,9 +109,6 @@ export function OrdersList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalOrders}</div>
-            <p className="text-xs text-muted-foreground">
-              +12% em relação ao mês passado
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -95,14 +118,11 @@ export function OrdersList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totalRevenue.toLocaleString("pt-BR", {
+              {Number(totalRevenue).toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",
               })}
             </div>
-            <p className="text-xs text-muted-foreground">
-              +8% em relação ao mês passado
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -116,14 +136,20 @@ export function OrdersList() {
               Gerencie todos os pedidos da sua loja
             </CardDescription>
           </div>
-          <div className="relative flex-1 max-w-xs">
-            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar pedidos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 max-w-xs">
+              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar pedidos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button onClick={handleCreateOrder} className="gap-2">
+              <PlusIcon className="h-4 w-4" />
+              Novo Pedido
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -156,9 +182,12 @@ export function OrdersList() {
                           <TableCell>
                             {format(order.created_at, "dd/MM/yyyy")}
                           </TableCell>
-                          <TableCell>{order.items.length} items</TableCell>
+                          <TableCell>
+                            {order.items.length}{" "}
+                            {order.items.length > 1 ? "itens" : "item"}
+                          </TableCell>
                           <TableCell className="text-right font-medium">
-                            {order.total.toLocaleString("pt-BR", {
+                            {Number(order.total).toLocaleString("pt-BR", {
                               style: "currency",
                               currency: "BRL",
                             })}
@@ -194,7 +223,6 @@ export function OrdersList() {
                                         </p>
                                       </div>
                                     </div>
-
                                     <div className="space-y-2">
                                       <Label className="text-sm font-medium">
                                         Produtos
@@ -223,7 +251,6 @@ export function OrdersList() {
                                         )}
                                       </div>
                                     </div>
-
                                     <div className="space-y-2">
                                       <Label className="text-sm font-medium">
                                         Resumo
@@ -247,28 +274,33 @@ export function OrdersList() {
                                         <div className="flex justify-between text-sm font-medium">
                                           <span>Total:</span>
                                           <span>
-                                            {selectedOrder.total.toLocaleString(
-                                              "pt-BR",
-                                              {
-                                                style: "currency",
-                                                currency: "BRL",
-                                              }
-                                            )}
+                                            {Number(
+                                              selectedOrder.total
+                                            ).toLocaleString("pt-BR", {
+                                              style: "currency",
+                                              currency: "BRL",
+                                            })}
                                           </span>
                                         </div>
                                       </div>
                                     </div>
                                   </div>
                                 )}
-
                                 <SheetFooter>
                                   <SheetClose asChild>
                                     <Button variant="outline">Fechar</Button>
                                   </SheetClose>
-                                  <Button>Atualizar Status</Button>
                                 </SheetFooter>
                               </SheetContent>
                             </Sheet>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditOrder(order)}>
+                              <EditIcon className="h-4 w-4" />
+                              <span className="sr-only">Editar pedido</span>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -280,6 +312,39 @@ export function OrdersList() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Modal de Criar Pedido */}
+      <Sheet open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <SheetContent className="w-full sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle>Novo Pedido</SheetTitle>
+            <SheetDescription>
+              Preencha os dados para criar um novo pedido
+            </SheetDescription>
+          </SheetHeader>
+          <OrderForm
+            onSave={handleOrderSaved}
+            onCancel={() => setIsCreateModalOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Modal de Editar Pedido */}
+      <Sheet open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <SheetContent className="w-full sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle>Editar Pedido</SheetTitle>
+            <SheetDescription>
+              Edite as informações do pedido {orderToEdit?.id}
+            </SheetDescription>
+          </SheetHeader>
+          <OrderForm
+            order={orderToEdit}
+            onSave={handleOrderSaved}
+            onCancel={() => setIsEditModalOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
