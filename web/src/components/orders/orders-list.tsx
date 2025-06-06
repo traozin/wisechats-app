@@ -1,13 +1,16 @@
 "use client";
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
+  CheckCircle2Icon,
+  ClockIcon,
+  EditIcon,
+  EyeIcon,
+  FilterIcon,
+  PlusIcon,
+  SearchIcon,
+  ShoppingCartIcon,
+  TrashIcon,
+} from "lucide-react";
 import {
   Sheet,
   SheetClose,
@@ -18,7 +21,24 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -27,85 +47,114 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import React, { useState, useEffect } from "react";
-import {
-  EditIcon,
-  EyeIcon,
-  PackageIcon,
-  PlusIcon,
-  SearchIcon,
-  TrashIcon,
-} from "lucide-react";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api";
-import { Orders } from "@/types/order";
-import Cookie from "js-cookie";
-import { OrderForm } from "@/components/orders/order-form";
+import { Customer, statusConfig } from "@/types/user";
+import { Order } from "@/types/order";
 import { toast } from "react-toastify";
+import { OrderFormData, OrderService } from "@/hooks/order-hooks";
+import { OrderViewModal } from "@/components/orders/order-view";
+import { useEffect, useState } from "react";
+import { OrderModal } from "@/components/orders/order-form";
 
 export function OrdersList() {
+  const [ordersData, setOrdersData] = useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedOrder, setSelectedOrder] = useState<Orders | null>(null);
-  const [orders, setOrders] = useState<Orders[]>([]);
+  const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [orderToEdit, setOrderToEdit] = useState<Orders | null>(null);
-  const [orderToDelete, setOrderToDelete] = React.useState<Orders | null>(null);
-  const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
-  const fetchOrders = async () => {
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [orders, customersData] = await Promise.all([
+          OrderService.getOrders(),
+          OrderService.getCustomers(),
+        ]);
+
+        const customerMap = customersData.reduce<Record<string, Customer>>((acc, customer) => {
+          acc[customer.id] = customer;
+          return acc;
+        }, {});
+
+        const ordersWithCustomerInfo = orders.map((order) => {
+          const customer = customerMap[order.user_id];
+          return {
+            ...order,
+            customer_name: customer?.name ?? "",
+            customer_email: customer?.email ?? "",
+          };
+        });
+
+        setOrdersData(ordersWithCustomerInfo);
+        setCustomers(customersData);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        toast.error("Erro ao carregar dados");
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const handleSaveOrder = async (orderId: string, data: OrderFormData) => {
+    setIsLoading(true);
+
     try {
-      setIsLoading(true);
-      const { data } = await api.get<Orders[]>("/orders", {
-        headers: {
-          Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
-        },
+      await OrderService.updateOrder(orderId, data);
+
+      const updatedOrders = ordersData.map((order) => {
+        if (order.id === orderId) {
+          const customer = customers.find((c) => c.id === data.customer_id);
+          return {
+            ...order,
+            user_id: data.customer_id,
+            customer_name: customer?.name || order.customer_name,
+            customer_email: customer?.email || order.customer_email,
+            updated_at: new Date(),
+          };
+        }
+        return order;
       });
-      setOrders(data);
+
+      setOrdersData(updatedOrders);
+      toast.success("Pedido atualizado com sucesso!");
     } catch (error) {
-      console.error("Erro ao buscar pedidos:", error);
+      console.error("Erro ao atualizar pedido:", error);
+      toast.error("Erro ao atualizar pedido. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const handleCreateOrder = async (data: OrderFormData) => {
+    setIsLoading(true);
 
-  const handleCreateOrder = () => {
-    setIsCreateModalOpen(true);
-  };
+    try {
+      const newOrder = await OrderService.createOrder(data);
 
-  const handleEditOrder = (order: Orders) => {
-    setOrderToEdit(order);
-    setIsEditModalOpen(true);
-  };
+      setOrdersData([...ordersData, newOrder]);
 
-  const handleOrderSaved = () => {
-    fetchOrders();
-    setIsCreateModalOpen(false);
-    setIsEditModalOpen(false);
-    setOrderToEdit(null);
+      toast.success("Pedido criado com sucesso!");
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error("Erro ao criar pedido:", error);
+      toast.error("Erro ao criar pedido. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeleteOrder = async (orderId: string) => {
     setIsDeleting(orderId);
 
     try {
-      await api.delete(`/orders/${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
-        },
-      });
+      await OrderService.deleteOrder(orderId);
 
-      fetchOrders();
+      const updatedOrders = ordersData.filter((order) => order.id !== orderId);
+      setOrdersData(updatedOrders);
+
       toast.success("Pedido excluído com sucesso!");
     } catch (error) {
       console.error("Erro ao deletar pedido:", error);
@@ -115,19 +164,25 @@ export function OrdersList() {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = ordersData.filter((order) => {
     const matchesSearch =
-      String(order.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(order.user_id).toLowerCase().includes(searchTerm.toLowerCase());
+      (order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (order.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
 
-    return matchesSearch;
+    const matchesStatus =
+      statusFilter === "all" || order.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
   });
 
-  const totalOrders = orders.length;
-  const totalRevenue = orders.reduce(
-    (sum, order) => sum + Number(order.total),
-    0
-  );
+  const totalOrders = ordersData.length;
+  const totalRevenue = ordersData.reduce((sum, order) => sum + Number(order.total), 0);
+  const pendingOrders = ordersData.filter(
+    (order) => order.status === "pending"
+  ).length;
+  const deliveredOrders = ordersData.filter(
+    (order) => order.status === "delivered"
+  ).length;
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
@@ -138,10 +193,13 @@ export function OrdersList() {
             <CardTitle className="text-sm font-medium">
               Total de Pedidos
             </CardTitle>
-            <PackageIcon className="h-4 w-4 text-muted-foreground" />
+            <ShoppingCartIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalOrders}</div>
+            <p className="text-xs text-muted-foreground">
+              +12% em relação ao mês passado
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -151,92 +209,170 @@ export function OrdersList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Number(totalRevenue).toLocaleString("pt-BR", {
+              {totalRevenue.toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",
               })}
             </div>
+            <p className="text-xs text-muted-foreground">
+              +8% em relação ao mês passado
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Pedidos Pendentes
+            </CardTitle>
+            <ClockIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingOrders}</div>
+            <p className="text-xs text-muted-foreground">Requer atenção</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Pedidos Entregues
+            </CardTitle>
+            <CheckCircle2Icon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{deliveredOrders}</div>
+            <p className="text-xs text-muted-foreground">
+              Taxa de entrega: 95%
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filtros e busca */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div>
-            <CardTitle>Pedidos</CardTitle>
-            <CardDescription>
-              Gerencie todos os pedidos da sua loja
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 max-w-xs">
-              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar pedidos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button onClick={handleCreateOrder} className="gap-2">
-              <PlusIcon className="h-4 w-4" />
-              Novo Pedido
-            </Button>
-          </div>
+        <CardHeader>
+          <CardTitle>Pedidos</CardTitle>
+          <CardDescription>
+            Gerencie todos os pedidos da sua loja
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="space-y-4">
-            <TabsContent value="all" className="space-y-4">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Pedido</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Items</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="w-24">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredOrders.map((order) => {
-                      return (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-medium">
-                            {order.id}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{order.user_id}</div>
+          <div className="space-y-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-2">
+                <div className="relative flex-1 sm:max-w-sm">
+                  <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar pedidos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-40">
+                    <FilterIcon className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os status</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="processing">Processando</SelectItem>
+                    <SelectItem value="shipped">Enviado</SelectItem>
+                    <SelectItem value="delivered">Entregue</SelectItem>
+                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Sheet
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}>
+                <SheetTrigger asChild>
+                  <Button>
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    Adicionar Pedido
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>Criar Novo Pedido</SheetTitle>
+                    <SheetDescription>
+                      Preencha as informações para criar um novo pedido
+                    </SheetDescription>
+                  </SheetHeader>
+
+                  <OrderModal
+                    onSave={handleCreateOrder}
+                    isLoading={isLoading}
+                    isCreating={true}
+                  />
+
+                  <SheetFooter className="gap-2">
+                    <SheetClose asChild>
+                      <Button variant="outline" disabled={isLoading}>
+                        Cancelar
+                      </Button>
+                    </SheetClose>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pedido</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="w-24">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => {
+                    return (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">
+                          {order.id}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {order.customer_name}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {format(order.created_at, "dd/MM/yyyy")}
-                          </TableCell>
-                          <TableCell>
-                            {order.items.length}{" "}
-                            {order.items.length > 1 ? "itens" : "item"}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {Number(order.total).toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            })}
-                          </TableCell>
-                          <TableCell>
+                            <div className="text-sm text-muted-foreground">
+                              {order.customer_email}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {order.items.reduce(
+                            (sum, item) => sum + item.quantity,
+                            0
+                          )}{" "}
+                          items
+                        </TableCell>
+                        <TableCell>
+                          {format(order.created_at, "dd/MM/yyyy")}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {order.total.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            {/* Modal de Visualização */}
                             <Sheet>
                               <SheetTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setSelectedOrder(order)}>
+                                <Button variant="ghost" size="icon">
                                   <EyeIcon className="h-4 w-4" />
                                   <span className="sr-only">Ver detalhes</span>
                                 </Button>
                               </SheetTrigger>
-                              <SheetContent className="w-full sm:max-w-lg">
+                              <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
                                 <SheetHeader>
                                   <SheetTitle>Detalhes do Pedido</SheetTitle>
                                   <SheetDescription>
@@ -244,81 +380,8 @@ export function OrdersList() {
                                   </SheetDescription>
                                 </SheetHeader>
 
-                                {selectedOrder && (
-                                  <div className="space-y-6 py-4">
-                                    <div className="space-y-2">
-                                      <Label className="text-sm font-medium">
-                                        Cliente
-                                      </Label>
-                                      <div className="space-y-1">
-                                        <p className="text-sm">
-                                          {selectedOrder.user_id}
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-sm font-medium">
-                                        Produtos
-                                      </Label>
-                                      <div className="space-y-2">
-                                        {selectedOrder.items.map(
-                                          (item, index) => (
-                                            <div
-                                              key={index}
-                                              className="flex justify-between text-sm">
-                                              <span>
-                                                {item.quantity}x{" "}
-                                                {item.product.name}
-                                              </span>
-                                              <span>
-                                                {item.unit_price.toLocaleString(
-                                                  "pt-BR",
-                                                  {
-                                                    style: "currency",
-                                                    currency: "BRL",
-                                                  }
-                                                )}
-                                              </span>
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-sm font-medium">
-                                        Resumo
-                                      </Label>
-                                      <div className="space-y-1">
-                                        <div className="flex justify-between text-sm">
-                                          <span>Data do pedido:</span>
-                                          <span>
-                                            {format(
-                                              selectedOrder.created_at,
-                                              "dd/MM/yyyy"
-                                            )}
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                          <span>Total de items:</span>
-                                          <span>
-                                            {selectedOrder.items.length}
-                                          </span>
-                                        </div>
-                                        <div className="flex justify-between text-sm font-medium">
-                                          <span>Total:</span>
-                                          <span>
-                                            {Number(
-                                              selectedOrder.total
-                                            ).toLocaleString("pt-BR", {
-                                              style: "currency",
-                                              currency: "BRL",
-                                            })}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
+                                <OrderViewModal order={order} />
+
                                 <SheetFooter>
                                   <SheetClose asChild>
                                     <Button variant="outline">Fechar</Button>
@@ -327,125 +390,135 @@ export function OrdersList() {
                               </SheetContent>
                             </Sheet>
 
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEditOrder(order)}>
-                              <EditIcon className="h-4 w-4" />
-                              <span className="sr-only">Editar pedido</span>
-                            </Button>
+                            {/* Modal de Edição */}
+                            <Sheet>
+                              <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <EditIcon className="h-4 w-4" />
+                                  <span className="sr-only">Editar pedido</span>
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+                                <SheetHeader>
+                                  <SheetTitle>Editar Pedido</SheetTitle>
+                                  <SheetDescription>
+                                    Editando informações do pedido {order.id}
+                                  </SheetDescription>
+                                </SheetHeader>
 
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={isDeleting === order.id}
-                              onClick={() => setOrderToDelete(order)}>
-                              <TrashIcon className="h-4 w-4" />
-                              <span className="sr-only">Excluir pedido</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-          </Tabs>
+                                <OrderModal
+                                  order={order}
+                                  onSave={(data) =>
+                                    handleSaveOrder(order.id, data)
+                                  }
+                                  isLoading={isLoading}
+                                />
+
+                                <SheetFooter className="gap-2">
+                                  <SheetClose asChild>
+                                    <Button
+                                      variant="outline"
+                                      disabled={isLoading}>
+                                      Cancelar
+                                    </Button>
+                                  </SheetClose>
+                                </SheetFooter>
+                              </SheetContent>
+                            </Sheet>
+
+                            {/* Modal de Confirmação de Exclusão */}
+                            <Sheet
+                              open={!!orderToDelete}
+                              onOpenChange={() => setOrderToDelete(null)}>
+                              <SheetTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled={isDeleting === order.id}
+                                  onClick={() => setOrderToDelete(order)}>
+                                  <TrashIcon className="h-4 w-4" />
+                                  <span className="sr-only">
+                                    Excluir pedido
+                                  </span>
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent className="w-full sm:max-w-md">
+                                <SheetHeader>
+                                  <SheetTitle>Confirmar Exclusão</SheetTitle>
+                                  <SheetDescription>
+                                    Tem certeza que deseja excluir este pedido?
+                                  </SheetDescription>
+                                </SheetHeader>
+
+                                {orderToDelete && (
+                                  <div className="py-4 space-y-4">
+                                    <div className="p-4 bg-muted rounded-lg">
+                                      <div className="space-y-2">
+                                        <p>
+                                          <strong>Pedido:</strong>{" "}
+                                          {orderToDelete.id}
+                                        </p>
+                                        <p>
+                                          <strong>Cliente:</strong>{" "}
+                                          {orderToDelete.customer_name}
+                                        </p>
+                                        <p>
+                                          <strong>Total:</strong>{" "}
+                                          {orderToDelete.total.toLocaleString(
+                                            "pt-BR",
+                                            {
+                                              style: "currency",
+                                              currency: "BRL",
+                                            }
+                                          )}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                                      <p className="text-sm text-destructive">
+                                        ⚠️ Esta ação não pode ser desfeita. O
+                                        pedido será removido permanentemente do
+                                        sistema.
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <SheetFooter className="gap-2">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => setOrderToDelete(null)}
+                                    disabled={isDeleting === orderToDelete?.id}>
+                                    Cancelar
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => {
+                                      if (orderToDelete) {
+                                        handleDeleteOrder(orderToDelete.id);
+                                        setOrderToDelete(null);
+                                      }
+                                    }}
+                                    disabled={isDeleting === orderToDelete?.id}>
+                                    {isDeleting === orderToDelete?.id
+                                      ? "Excluindo..."
+                                      : "Excluir Pedido"}
+                                  </Button>
+                                </SheetFooter>
+                              </SheetContent>
+                            </Sheet>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Modal de Criar Pedido */}
-      <Sheet open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <SheetContent className="w-full sm:max-w-2xl">
-          <SheetHeader>
-            <SheetTitle>Novo Pedido</SheetTitle>
-            <SheetDescription>
-              Preencha os dados para criar um novo pedido
-            </SheetDescription>
-          </SheetHeader>
-          <OrderForm
-            onSave={handleOrderSaved}
-          />
-        </SheetContent>
-      </Sheet>
-
-      {/* Modal de Editar Pedido */}
-      <Sheet open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <SheetContent className="w-full sm:max-w-2xl">
-          <SheetHeader>
-            <SheetTitle>Editar Pedido</SheetTitle>
-            <SheetDescription>
-              Edite as informações do pedido {orderToEdit?.id}
-            </SheetDescription>
-          </SheetHeader>
-          <OrderForm
-            order={orderToEdit}
-            onSave={handleOrderSaved}
-          />
-        </SheetContent>
-      </Sheet>
-
-      {/* Modal de Confirmação de Exclusão */}
-      <Sheet open={!!orderToDelete} onOpenChange={() => setOrderToDelete(null)}>
-        <SheetContent className="w-full sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Confirmar Exclusão</SheetTitle>
-            <SheetDescription>
-              Tem certeza que deseja excluir este pedido?
-            </SheetDescription>
-          </SheetHeader>
-
-          {orderToDelete && (
-            <div className="py-4 space-y-4">
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="space-y-2">
-                  <p>
-                    <strong>Pedido:</strong> {orderToDelete.id}
-                  </p>
-                  <p>
-                    <strong>Cliente:</strong> {orderToDelete.user_id}
-                  </p>
-                  <p>
-                    <strong>Total:</strong>{" "}
-                    {orderToDelete.total.toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <p className="text-sm text-destructive">
-                  ⚠️ Esta ação não pode ser desfeita. O pedido será removido
-                  permanentemente do sistema.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <SheetFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setOrderToDelete(null)}
-              disabled={isDeleting === orderToDelete?.id}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (orderToDelete) {
-                  handleDeleteOrder(orderToDelete.id);
-                  setOrderToDelete(null);
-                }
-              }}
-              disabled={isDeleting === orderToDelete?.id}>
-              {isDeleting === orderToDelete?.id ? "Excluindo..." : "Excluir Pedido"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
