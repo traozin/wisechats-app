@@ -7,7 +7,6 @@ export interface Order {
   updated_at: Date;
   customer_name: string;
   customer_email: string;
-  status: string;
 }
 
 export interface Item {
