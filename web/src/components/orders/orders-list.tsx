@@ -45,7 +45,7 @@ import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { Orders } from "@/types/order";
 import Cookie from "js-cookie";
-import { OrderForm } from "@/components/order-form";
+import { OrderForm } from "@/components/orders/order-form";
 import { toast } from "react-toastify";
 
 export function OrdersList() {
@@ -366,7 +366,6 @@ export function OrdersList() {
           </SheetHeader>
           <OrderForm
             onSave={handleOrderSaved}
-            onCancel={() => setIsCreateModalOpen(false)}
           />
         </SheetContent>
       </Sheet>
@@ -383,7 +382,6 @@ export function OrdersList() {
           <OrderForm
             order={orderToEdit}
             onSave={handleOrderSaved}
-            onCancel={() => setIsEditModalOpen(false)}
           />
         </SheetContent>
       </Sheet>

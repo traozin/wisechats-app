@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { PlusIcon, TrashIcon } from "lucide-react";
 
@@ -32,11 +31,11 @@ import { useEffect, useState } from "react";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
+import { SheetClose } from "../ui/sheet";
 
 interface OrderFormProps {
   order?: Orders | null;
   onSave: () => void;
-  onCancel: () => void;
 }
 
 const orderFormSchema = z.object({
@@ -54,7 +53,7 @@ const orderFormSchema = z.object({
 
 type OrderFormData = z.infer<typeof orderFormSchema>;
 
-export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
+export function OrderForm({ order, onSave }: OrderFormProps) {
   const form = useForm({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
@@ -141,9 +140,7 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
       if (error.response && error.response.data) {
         const apiError = error.response.data;
 
-        toast.error(
-          apiError.error || "Erro desconhecido ao salvar o pedido."
-        );
+        toast.error(apiError.error || "Erro desconhecido ao salvar o pedido.");
       } else {
         toast.error("Erro inesperado. Tente novamente mais tarde.");
       }
@@ -342,9 +339,11 @@ export function OrderForm({ order, onSave, onCancel }: OrderFormProps) {
 
           {/* Ações */}
           <div className="flex gap-3 justify-end">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
+            <SheetClose asChild>
+              <Button type="button" variant="outline">
+                Cancelar
+              </Button>
+            </SheetClose>
             <Button type="submit" disabled={isLoading}>
               {isLoading
                 ? "Salvando..."
