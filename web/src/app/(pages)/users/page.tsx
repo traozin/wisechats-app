@@ -1,5 +1,5 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
+import { AppSidebar } from "@/components/site/app-sidebar"
+import { SiteHeader } from "@/components/site/site-header"
 import { UserList } from "@/components/users/user-list"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
