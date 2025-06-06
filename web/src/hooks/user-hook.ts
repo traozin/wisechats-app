@@ -1,6 +1,5 @@
-import { api } from "@/lib/api";
+import { api, authHeader } from "@/lib/api";
 import z from "zod";
-import Cookie from "js-cookie";
 import { User } from "@/types/user";
 
 export const editUserSchema = z.object({
@@ -11,42 +10,34 @@ export const editUserSchema = z.object({
 export type UserFormData = z.infer<typeof editUserSchema>;
 
 export const UserService = {
-    async getUsers(): Promise<User[]> {
-        const { data } = await api.get<User[]>("/users", {
-            headers: {
-                Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
-            },
-        });
-        return data;
-    },
+  async getUsers(): Promise<User[]> {
+    const { data } = await api.get<User[]>("/users", {
+      headers: authHeader(),
+    });
+    return data;
+  },
 
-    async updateUser(userId: string, data: UserFormData): Promise<User> {
-        const { data: updatedUser } = await api.put<User>(
-            `/users/${userId}`,
-            data,
-            {
-                headers: {
-                    Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
-                },
-            }
-        );
-        return updatedUser;
-    },
+  async updateUser(userId: string, data: UserFormData): Promise<User> {
+    const { data: updatedUser } = await api.put<User>(
+      `/users/${userId}`,
+      data,
+      {
+        headers: authHeader(),
+      }
+    );
+    return updatedUser;
+  },
 
-    async deleteUser(userId: string): Promise<void> {
-        await api.delete(`/users/${userId}`, {
-            headers: {
-                Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
-            },
-        });
-    },
+  async deleteUser(userId: string): Promise<void> {
+    await api.delete(`/users/${userId}`, {
+      headers: authHeader(),
+    });
+  },
 
-    async createUser(data: UserFormData): Promise<User> {
-        const { data: newUser } = await api.post<User>("/users", data, {
-            headers: {
-                Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
-            },
-        });
-        return newUser;
-    },
+  async createUser(data: UserFormData): Promise<User> {
+    const { data: newUser } = await api.post<User>("/users", data, {
+      headers: authHeader(),
+    });
+    return newUser;
+  },
 };
