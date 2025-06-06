@@ -1,11 +1,8 @@
 "use client";
 
 import {
-  CheckCircle2Icon,
-  ClockIcon,
   EditIcon,
   EyeIcon,
-  FilterIcon,
   PlusIcon,
   SearchIcon,
   ShoppingCartIcon,
@@ -22,7 +19,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,13 +29,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -47,7 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Customer, statusConfig } from "@/types/user";
+import { Customer } from "@/types/user";
 import { Order } from "@/types/order";
 import { toast } from "react-toastify";
 import { OrderFormData, OrderService } from "@/hooks/order-hooks";
@@ -58,7 +47,6 @@ import { OrderModal } from "@/components/orders/order-form";
 export function OrdersList() {
   const [ordersData, setOrdersData] = useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);

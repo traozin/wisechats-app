@@ -4,7 +4,6 @@ import * as React from "react"
 import {
   ArrowUpCircleIcon,
   Container,
-  LayoutDashboardIcon,
   ListIcon,
   SearchIcon,
   SettingsIcon,

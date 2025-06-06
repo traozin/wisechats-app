@@ -50,7 +50,6 @@ import { UserViewModal } from "./user-view";
 export function UserList() {
   const [usersData, setUsersData] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -63,6 +62,7 @@ export function UserList() {
       setUsersData(users);
     } catch (error) {
       toast.error("Erro ao carregar usuários");
+      console.error("Erro ao carregar usuários:", error);
     }
   };
 
@@ -71,7 +71,6 @@ export function UserList() {
   }, []);
 
   const handleSaveUser = async () => {
-    setIsLoading(true);
     fetchUsers();
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
