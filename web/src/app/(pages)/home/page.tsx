@@ -1,6 +1,6 @@
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/site/app-sidebar"
 import { OrdersList } from "@/components/orders/orders-list"
-import { SiteHeader } from "@/components/site-header"
+import { SiteHeader } from "@/components/site/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 export default function HomePage() {

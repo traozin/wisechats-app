@@ -13,9 +13,9 @@ import {
   UsersIcon,
 } from "lucide-react"
 
-import { NavMain } from '@/components/nav-main'
-import { NavSecondary } from '@/components/nav-secondary'
-import { NavUser } from '@/components/nav-user'
+import { NavMain } from '@/components/site/nav-main'
+import { NavSecondary } from '@/components/site/nav-secondary'
+import { NavUser } from '@/components/site/nav-user'
 import {
   Sidebar,
   SidebarContent,
