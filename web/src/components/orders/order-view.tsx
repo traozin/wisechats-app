@@ -1,22 +1,14 @@
 import { Order } from "@/types/order"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
-import { statusConfig } from "@/types/user"
 
 export function OrderViewModal({ order }: { order: Order }) {
-  const status = statusConfig[order.status as keyof typeof statusConfig]
-  const StatusIcon = status.icon
 
   return (
     <div className="space-y-6 py-4">
       <div className="space-y-4">
         <div className="space-y-2">
           <Label className="text-sm font-medium">Status</Label>
-          <Badge variant={status.variant} className="gap-1">
-            <StatusIcon className="h-3 w-3" />
-            {status.label}
-          </Badge>
         </div>
 
         <div className="space-y-2">

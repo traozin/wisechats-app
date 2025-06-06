@@ -73,10 +73,13 @@ export function OrdersList() {
           OrderService.getCustomers(),
         ]);
 
-        const customerMap = customersData.reduce<Record<string, Customer>>((acc, customer) => {
-          acc[customer.id] = customer;
-          return acc;
-        }, {});
+        const customerMap = customersData.reduce<Record<string, Customer>>(
+          (acc, customer) => {
+            acc[customer.id] = customer;
+            return acc;
+          },
+          {}
+        );
 
         const ordersWithCustomerInfo = orders.map((order) => {
           const customer = customerMap[order.user_id];
@@ -166,23 +169,19 @@ export function OrdersList() {
 
   const filteredOrders = ordersData.filter((order) => {
     const matchesSearch =
-      (order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-      (order.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+      (order.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+        false) ||
+      (order.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+        false);
 
-    const matchesStatus =
-      statusFilter === "all" || order.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   const totalOrders = ordersData.length;
-  const totalRevenue = ordersData.reduce((sum, order) => sum + Number(order.total), 0);
-  const pendingOrders = ordersData.filter(
-    (order) => order.status === "pending"
-  ).length;
-  const deliveredOrders = ordersData.filter(
-    (order) => order.status === "delivered"
-  ).length;
+  const totalRevenue = ordersData.reduce(
+    (sum, order) => sum + Number(order.total),
+    0
+  );
 
   return (
     <div className="space-y-6 px-4 lg:px-6">
@@ -197,9 +196,6 @@ export function OrdersList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalOrders}</div>
-            <p className="text-xs text-muted-foreground">
-              +12% em relação ao mês passado
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -214,35 +210,6 @@ export function OrdersList() {
                 currency: "BRL",
               })}
             </div>
-            <p className="text-xs text-muted-foreground">
-              +8% em relação ao mês passado
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pedidos Pendentes
-            </CardTitle>
-            <ClockIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingOrders}</div>
-            <p className="text-xs text-muted-foreground">Requer atenção</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pedidos Entregues
-            </CardTitle>
-            <CheckCircle2Icon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{deliveredOrders}</div>
-            <p className="text-xs text-muted-foreground">
-              Taxa de entrega: 95%
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -268,20 +235,6 @@ export function OrdersList() {
                     className="pl-9"
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <FilterIcon className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="processing">Processando</SelectItem>
-                    <SelectItem value="shipped">Enviado</SelectItem>
-                    <SelectItem value="delivered">Entregue</SelectItem>
-                    <SelectItem value="cancelled">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <Sheet
                 open={isCreateModalOpen}
