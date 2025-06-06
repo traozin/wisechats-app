@@ -3,14 +3,12 @@
 import * as React from "react"
 import {
   ArrowUpCircleIcon,
-  BarChartIcon,
-  FolderIcon,
-  HelpCircleIcon,
+  Container,
   LayoutDashboardIcon,
   ListIcon,
   SearchIcon,
   SettingsIcon,
-  UsersIcon,
+  UserIcon,
 } from "lucide-react"
 
 import { NavMain } from '@/components/site/nav-main'
@@ -34,41 +32,26 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "#",
-      icon: LayoutDashboardIcon,
+      title: "Pedidos",
+      url: "/home",
+      icon: Container,
     },
     {
-      title: "Lifecycle",
-      url: "#",
+      title: "Usuários",
+      url: "/users",
+      icon: UserIcon,
+    },
+    {
+      title: "Produtos",
+      url: "/users",
       icon: ListIcon,
-    },
-    {
-      title: "Analytics",
-      url: "#",
-      icon: BarChartIcon,
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: FolderIcon,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: UsersIcon,
-    },
+    }
   ],
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/home",
       icon: SettingsIcon,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: HelpCircleIcon,
     },
     {
       title: "Search",
