@@ -63,7 +63,7 @@ export function ProductList() {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Carregar produtos ao montar o componente
+  
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -78,7 +78,7 @@ export function ProductList() {
     loadProducts();
   }, []);
 
-  // Função para salvar alterações
+  
   const handleSaveProduct = async (
     productId: string,
     data: ProductFormData
@@ -86,10 +86,10 @@ export function ProductList() {
     setIsLoading(true);
 
     try {
-      // Tentar atualizar via API
+      
       await ProductService.updateProduct(productId, data);
 
-      // Atualizar o produto na lista local
+      
       const updatedProducts = productsData.map((product) => {
         if (product.id === productId) {
           return {
@@ -114,15 +114,15 @@ export function ProductList() {
     }
   };
 
-  // Função para criar produto
+  
   const handleCreateProduct = async (data: ProductFormData) => {
     setIsLoading(true);
 
     try {
-      // Tentar criar via API
+      
       const newProduct = await ProductService.createProduct(data);
 
-      // Adicionar à lista local
+      
       setProductsData([...productsData, newProduct]);
 
       toast.success("Produto criado com sucesso!");
@@ -135,7 +135,7 @@ export function ProductList() {
     }
   };
 
-  // Função para deletar produto
+  
   const handleDeleteProduct = async (productId: string) => {
     setIsDeleting(productId);
 

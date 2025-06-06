@@ -1,10 +1,13 @@
-export interface Orders {
+export interface Order {
   id: string;
   user_id: string;
   total: number;
   items: Array<Item>;
   created_at: Date;
   updated_at: Date;
+  customer_name: string;
+  customer_email: string;
+  status: string;
 }
 
 export interface Item {
@@ -28,3 +31,4 @@ export interface Product {
   created_at: Date;
   updated_at: Date;
 }
+

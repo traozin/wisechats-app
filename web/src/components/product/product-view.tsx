@@ -3,7 +3,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
-// Componente para o modal de visualização
 export function ProductViewModal({ product }: { product: Product }) {
   return (
     <div className="space-y-6 py-4">
