@@ -1,5 +1,3 @@
-import { CheckCircle2Icon, ClockIcon, PackageIcon, TruckIcon, XCircleIcon } from "lucide-react";
-
 export interface User {
   id: string;
   name: string;
