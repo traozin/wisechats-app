@@ -16,14 +16,13 @@ import { User } from "@/types/user";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { useState } from "react";
-import { SheetClose } from "@/components/ui/sheet";
 
 interface UserFormProps {
   user?: User | null;
   onSave: () => void;
 }
 
-export function UserEditModal({ user, onSave }: UserFormProps) {
+export function UserModal({ user, onSave }: UserFormProps) {
   const form = useForm({
     resolver: zodResolver(editUserSchema),
     defaultValues: {
@@ -67,9 +66,9 @@ export function UserEditModal({ user, onSave }: UserFormProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 space-y-8">
+    <div className="py-4">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* User */}
           <FormField
             control={form.control}
@@ -104,13 +103,8 @@ export function UserEditModal({ user, onSave }: UserFormProps) {
           />
 
           {/* Ações */}
-          <div className="flex gap-3 justify-end">
-            <SheetClose asChild>
-              <Button type="button" variant="outline">
-                Cancelar
-              </Button>
-            </SheetClose>
-            <Button type="submit" disabled={isLoading}>
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={isLoading} className="flex-1">
               {isLoading
                 ? "Salvando..."
                 : isCreating

@@ -44,7 +44,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
 import { User } from "@/types/user";
 import { UserService } from "@/hooks/user-hook";
-import { UserEditModal } from "./user-form";
+import { UserModal } from "./user-form";
 import { UserViewModal } from "./user-view";
 
 export function UserList() {
@@ -134,10 +134,33 @@ export function UserList() {
                   />
                 </div>
               </div>
-              <Button onClick={handleCreateUser} className="gap-2">
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Adicionar Usuário
-              </Button>
+              {/* Modal de Criação */}
+              <Sheet
+                open={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}>
+                <SheetTrigger asChild>
+                  <Button>
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    Adicionar Usuário
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>Criar Novo Usuário</SheetTitle>
+                    <SheetDescription>
+                      Preencha as informações para criar um novo usuário
+                    </SheetDescription>
+                  </SheetHeader>
+
+                  <UserModal onSave={handleSaveUser} />
+
+                  <SheetFooter className="gap-2">
+                    <SheetClose asChild>
+                      <Button variant="outline">Cancelar</Button>
+                    </SheetClose>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
             </div>
 
             <div className="rounded-md border">
@@ -202,22 +225,105 @@ export function UserList() {
                             </SheetContent>
                           </Sheet>
 
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditUser(user)}>
-                            <EditIcon className="h-4 w-4" />
-                            <span className="sr-only">Editar pedido</span>
-                          </Button>
+                          {/* Modal de Edição */}
+                          <Sheet>
+                            <SheetTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <EditIcon className="h-4 w-4" />
+                                <span className="sr-only">Editar Usuário</span>
+                              </Button>
+                            </SheetTrigger>
+                            <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+                              <SheetHeader>
+                                <SheetTitle>Editar Usuário</SheetTitle>
+                                <SheetDescription>
+                                  Editando informações do usuário
+                                </SheetDescription>
+                              </SheetHeader>
 
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={isDeleting === user.id}
-                            onClick={() => setUserToEdit(user)}>
-                            <TrashIcon className="h-4 w-4" />
-                            <span className="sr-only">Excluir pedido</span>
-                          </Button>
+                              <UserModal
+                                user={userToEdit}
+                                onSave={handleSaveUser}
+                              />
+
+                              <SheetFooter className="gap-2">
+                                <SheetClose asChild>
+                                  <Button variant="outline">Cancelar</Button>
+                                </SheetClose>
+                              </SheetFooter>
+                            </SheetContent>
+                          </Sheet>
+
+                          {/* Modal de Confirmação de Exclusão */}
+                          <Sheet
+                            open={!!userToDelete}
+                            onOpenChange={() => setUserToDelete(null)}>
+                            <SheetTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={isDeleting === user.id}
+                                onClick={() => setUserToDelete(user)}>
+                                <TrashIcon className="h-4 w-4" />
+                                <span className="sr-only">Excluir pedido</span>
+                              </Button>
+                            </SheetTrigger>
+                            <SheetContent className="w-full sm:max-w-md">
+                              <SheetHeader>
+                                <SheetTitle>Confirmar Exclusão</SheetTitle>
+                                <SheetDescription>
+                                  Tem certeza que deseja excluir este pedido?
+                                </SheetDescription>
+                              </SheetHeader>
+
+                              {userToDelete && (
+                                <div className="py-4 space-y-4">
+                                  <div className="p-4 bg-muted rounded-lg">
+                                    <div className="space-y-2">
+                                      <p>
+                                        <strong>Nome:</strong>{" "}
+                                        {userToDelete.name}
+                                      </p>
+                                      <p>
+                                        <strong>Email:</strong>{" "}
+                                        {userToDelete.email}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                                    <p className="text-sm text-destructive">
+                                      ⚠️ Esta ação não pode ser desfeita. O
+                                      usuário será removido permanentemente do
+                                      sistema.
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              <SheetFooter className="gap-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setUserToDelete(null)}
+                                  disabled={isDeleting === userToDelete?.id}>
+                                  Cancelar
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => {
+                                    if (userToDelete) {
+                                      setUserToDelete(userToDelete);
+                                      setUserToDelete(null);
+                                    }
+                                  }}
+                                  disabled={isDeleting === userToDelete?.id}>
+                                  {isDeleting === userToDelete?.id
+                                    ? "Excluindo..."
+                                    : "Excluir Pedido"}
+                                </Button>
+                              </SheetFooter>
+                            </SheetContent>
+                          </Sheet>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -228,90 +334,6 @@ export function UserList() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Modal de Criação */}
-      <Sheet open={isEditModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <SheetContent className="w-full sm:max-w-2xl">
-          <SheetHeader>
-            <SheetTitle>Criar Novo Usuário</SheetTitle>
-            <SheetDescription>
-              Preencha as informações para criar um novo usuário
-            </SheetDescription>
-          </SheetHeader>
-          <UserEditModal
-            onSave={handleSaveUser}
-          />
-        </SheetContent>
-      </Sheet>
-
-      {/* Modal de Edição */}
-      <Sheet open={isCreateModalOpen} onOpenChange={setIsEditModalOpen}>
-        <SheetContent className="w-full sm:max-w-2xl">
-          <SheetHeader>
-            <SheetTitle>Editar Usuário</SheetTitle>
-            <SheetDescription>Editando informações do usuário</SheetDescription>
-          </SheetHeader>
-
-          <UserEditModal
-            user={userToEdit}
-            onSave={handleSaveUser}
-          />
-        </SheetContent>
-      </Sheet>
-
-      {/* Modal de Confirmação de Exclusão */}
-      <Sheet open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
-        <SheetContent className="w-full sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Confirmar Exclusão</SheetTitle>
-            <SheetDescription>
-              Tem certeza que deseja excluir este pedido?
-            </SheetDescription>
-          </SheetHeader>
-
-          {userToDelete && (
-            <div className="py-4 space-y-4">
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="space-y-2">
-                  <p>
-                    <strong>Nome:</strong> {userToDelete.name}
-                  </p>
-                  <p>
-                    <strong>Email:</strong> {userToDelete.email}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <p className="text-sm text-destructive">
-                  ⚠️ Esta ação não pode ser desfeita. O usuário será removido
-                  permanentemente do sistema.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <SheetFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setUserToDelete(null)}
-              disabled={isDeleting === userToDelete?.id}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (userToDelete) {
-                  handleDeleteUser(userToDelete.id);
-                  setUserToDelete(null);
-                }
-              }}
-              disabled={isDeleting === userToDelete?.id}>
-              {isDeleting === userToDelete?.id ? "Excluindo..." : "Excluir Pedido"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
