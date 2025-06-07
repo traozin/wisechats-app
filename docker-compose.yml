@@ -1,0 +1,56 @@
+services:
+  backend:
+    build:
+      context: ./api
+    container_name: laravel_app
+    volumes:
+      - ./api:/var/www
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - app_network
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: wise_db
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    working_dir: /var/www
+
+  frontend:
+    build:
+      context: ./web
+    container_name: nextjs_app
+    volumes:
+      - ./web:/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+    working_dir: /app
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: wise_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  app_network:
+    driver: bridge
