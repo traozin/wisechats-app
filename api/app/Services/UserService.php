@@ -26,13 +26,20 @@ class UserService {
      * @return User
      * @throws Exception
      */
-    public function createUser(UserData $data): User {
-        // Se desejar, você pode verificar se o e-mail já existe antes de criar.
-        return User::create([
+    public function createUser(UserData $data): Array {
+        // Verifica se o email já está em uso
+        $user = User::create([
             'name' => $data->name,
             'email' => $data->email,
             'password' => Hash::make($data->password),
         ]);
+
+        $token = $user->createToken('wise_token')->plainTextToken;
+
+        return [
+            'user' => $user,
+            'token' => $token
+        ];
     }
 
     /**
