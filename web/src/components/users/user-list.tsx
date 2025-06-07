@@ -46,23 +46,21 @@ import { User } from "@/types/user";
 import { UserService } from "@/hooks/user-hook";
 import { UserModal } from "./user-form";
 import { UserViewModal } from "./user-view";
+import { handleError } from "@/helpers/utils";
 
 export function UserList() {
   const [usersData, setUsersData] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [userToEdit, setUserToEdit] = useState<User | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const fetchUsers = async () => {
     try {
       const users = await UserService.getUsers();
       setUsersData(users);
-    } catch (error) {
-      toast.error("Erro ao carregar usuários");
-      console.error("Erro ao carregar usuários:", error);
+    } catch (error: any) {
+      handleError("Erro ao carregar usuários", error);
     }
   };
 
@@ -72,36 +70,33 @@ export function UserList() {
 
   const handleSaveUser = async () => {
     fetchUsers();
-    setIsCreateModalOpen(false);
-    setIsEditModalOpen(false);
+    setIsModalOpen(false);
   };
 
-  const handleEditUser = (user: User) => {
-    setUserToEdit(user);
-    setIsEditModalOpen(true);
-  };
-
-  const handleCreateUser = () => {
-    setIsCreateModalOpen(true);
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    setIsDeleting(userId);
-
+  const handleDeleteUser = async () => {
     try {
-      await UserService.deleteUser(userId);
+      const me = await UserService.getMe()
+      
+      if (!userToDelete || userToDelete.id === me.user.id) {
+        throw new Error("Você não pode excluir a si mesmo.");
+      }
 
+      const userId = userToDelete!.id;
+      setIsDeleting(true);
+      await UserService.deleteUser(userId);
+      
       const updatedUsers = usersData.filter((user) => user.id !== userId);
       setUsersData(updatedUsers);
 
       toast.success("Usuário excluído com sucesso!");
     } catch (error) {
-      console.error("Erro ao deletar usuário:", error);
-      toast.error("Erro ao excluir usuário. Tente novamente.");
+      handleError("Erro ao excluir usuário", error);
     } finally {
-      setIsDeleting(null);
+      setUserToDelete(null);
+      setIsDeleting(false);
     }
   };
+
 
   const filteredUsers = usersData.filter((user) => {
     return (
@@ -135,9 +130,7 @@ export function UserList() {
                 </div>
               </div>
               {/* Modal de Criação */}
-              <Sheet
-                open={isCreateModalOpen}
-                onOpenChange={setIsCreateModalOpen}>
+              <Sheet open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <SheetTrigger asChild>
                   <Button>
                     <PlusIcon className="mr-2 h-4 w-4" />
@@ -226,7 +219,7 @@ export function UserList() {
                           </Sheet>
 
                           {/* Modal de Edição */}
-                          <Sheet>
+                          <Sheet open={isModalOpen} onOpenChange={setIsModalOpen}>
                             <SheetTrigger asChild>
                               <Button variant="ghost" size="icon">
                                 <EditIcon className="h-4 w-4" />
@@ -241,10 +234,7 @@ export function UserList() {
                                 </SheetDescription>
                               </SheetHeader>
 
-                              <UserModal
-                                user={userToEdit}
-                                onSave={handleSaveUser}
-                              />
+                              <UserModal user={user} onSave={handleSaveUser} />
 
                               <SheetFooter className="gap-2">
                                 <SheetClose asChild>
@@ -256,13 +246,12 @@ export function UserList() {
 
                           {/* Modal de Confirmação de Exclusão */}
                           <Sheet
-                            open={!!userToDelete}
-                            onOpenChange={() => setUserToDelete(null)}>
+                            open={!!userToDelete}>
                             <SheetTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={isDeleting === user.id}
+                                disabled={isDeleting}
                                 onClick={() => setUserToDelete(user)}>
                                 <TrashIcon className="h-4 w-4" />
                                 <span className="sr-only">Excluir pedido</span>
@@ -304,20 +293,14 @@ export function UserList() {
                               <SheetFooter className="gap-2">
                                 <Button
                                   variant="outline"
-                                  onClick={() => setUserToDelete(null)}
-                                  disabled={isDeleting === userToDelete?.id}>
+                                  onClick={() => setUserToDelete(null)}>
                                   Cancelar
                                 </Button>
                                 <Button
                                   variant="destructive"
-                                  onClick={() => {
-                                    if (userToDelete) {
-                                      setUserToDelete(userToDelete);
-                                      setUserToDelete(null);
-                                    }
-                                  }}
-                                  disabled={isDeleting === userToDelete?.id}>
-                                  {isDeleting === userToDelete?.id
+                                  disabled={isDeleting}
+                                  onClick={handleDeleteUser}>                                  
+                                  {isDeleting
                                     ? "Excluindo..."
                                     : "Excluir Pedido"}
                                 </Button>

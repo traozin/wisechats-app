@@ -53,13 +53,14 @@ import { ProductFormData, ProductService } from "@/hooks/product-hook";
 import { ProductModal } from "@/components/product/product-form";
 import { ProductViewModal } from "./product-view";
 import { useEffect, useState } from "react";
+import { handleError } from "@/helpers/utils";
 
 export function ProductList() {
   const [productsData, setProductsData] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [stockFilter, setStockFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
@@ -70,8 +71,7 @@ export function ProductList() {
         const products = await ProductService.getProducts();
         setProductsData(products);
       } catch (error) {
-        console.error("Erro ao carregar produtos:", error);
-        toast.error("Erro ao carregar produtos");
+        handleError("Erro ao carregar produtos", error);
       }
     };
 
@@ -80,7 +80,7 @@ export function ProductList() {
 
   
   const handleSaveProduct = async (
-    productId: string,
+    productId: number,
     data: ProductFormData
   ) => {
     setIsLoading(true);
@@ -107,8 +107,7 @@ export function ProductList() {
       setProductsData(updatedProducts);
       toast.success("Produto atualizado com sucesso!");
     } catch (error) {
-      console.error("Erro ao atualizar produto:", error);
-      toast.error("Erro ao atualizar produto. Tente novamente.");
+      handleError("Erro ao atualizar produto", error);
     } finally {
       setIsLoading(false);
     }
@@ -128,16 +127,15 @@ export function ProductList() {
       toast.success("Produto criado com sucesso!");
       setIsCreateModalOpen(false);
     } catch (error) {
-      console.error("Erro ao criar produto:", error);
-      toast.error("Erro ao criar produto. Tente novamente.");
+      handleError("Erro ao criar produto", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   
-  const handleDeleteProduct = async (productId: string) => {
-    setIsDeleting(productId);
+  const handleDeleteProduct = async (productId: number) => {
+    setIsDeleting(true);
 
     try {
       await ProductService.deleteProduct(productId);
@@ -150,10 +148,9 @@ export function ProductList() {
 
       toast.success("Produto excluído com sucesso!");
     } catch (error) {
-      console.error("Erro ao deletar produto:", error);
-      toast.error("Erro ao excluir produto. Tente novamente.");
+      handleError("Erro ao excluir produto", error);
     } finally {
-      setIsDeleting(null);
+      setIsDeleting(false);
     }
   };
 
@@ -438,13 +435,12 @@ export function ProductList() {
 
                           {/* Modal de Confirmação de Exclusão */}
                           <Sheet
-                            open={!!productToDelete}
-                            onOpenChange={() => setProductToDelete(null)}>
+                            open={!!productToDelete}>
                             <SheetTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                disabled={isDeleting === product.id}
+                                disabled={isDeleting}
                                 onClick={() => setProductToDelete(product)}>
                                 <TrashIcon className="h-4 w-4" />
                                 <span className="sr-only">Excluir produto</span>
@@ -497,7 +493,7 @@ export function ProductList() {
                                 <Button
                                   variant="outline"
                                   onClick={() => setProductToDelete(null)}
-                                  disabled={isDeleting === productToDelete?.id}>
+                                  disabled={isDeleting}>
                                   Cancelar
                                 </Button>
                                 <Button
@@ -508,8 +504,8 @@ export function ProductList() {
                                       setProductToDelete(null);
                                     }
                                   }}
-                                  disabled={isDeleting === productToDelete?.id}>
-                                  {isDeleting === productToDelete?.id
+                                  disabled={isDeleting}>
+                                  {isDeleting
                                     ? "Excluindo..."
                                     : "Excluir Produto"}
                                 </Button>

@@ -7,10 +7,8 @@ export interface User {
 }
 
 export interface UserData {
-  data: {
-    user: Partial<User>;
-    token: string;
-  };
+  user: Partial<User>;
+  token: string;
 }
 
 export interface Customer {
@@ -20,4 +18,3 @@ export interface Customer {
   phone?: string;
   address?: string;
 }
-

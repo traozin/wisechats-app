@@ -43,102 +43,61 @@ import { OrderFormData, OrderService } from "@/hooks/order-hooks";
 import { OrderViewModal } from "@/components/orders/order-view";
 import { useEffect, useState } from "react";
 import { OrderModal } from "@/components/orders/order-form";
+import { handleError } from "@/helpers/utils";
 
 export function OrdersList() {
   const [ordersData, setOrdersData] = useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [orders, customersData] = await Promise.all([
-          OrderService.getOrders(),
-          OrderService.getCustomers(),
-        ]);
-
-        const customerMap = customersData.reduce<Record<string, Customer>>(
-          (acc, customer) => {
-            acc[customer.id] = customer;
-            return acc;
-          },
-          {}
-        );
-
-        const ordersWithCustomerInfo = orders.map((order) => {
-          const customer = customerMap[order.user_id];
-          return {
-            ...order,
-            customer_name: customer?.name ?? "",
-            customer_email: customer?.email ?? "",
-          };
-        });
-
-        setOrdersData(ordersWithCustomerInfo);
-        setCustomers(customersData);
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-        toast.error("Erro ao carregar dados");
-      }
-    };
-
-    loadData();
-  }, []);
-
-  const handleSaveOrder = async (orderId: string, data: OrderFormData) => {
-    setIsLoading(true);
-
+  const fetchData = async () => {
     try {
-      await OrderService.updateOrder(orderId, data);
+      const [orders, customersData] = await Promise.all([
+        OrderService.getOrders(),
+        OrderService.getCustomers(),
+      ]);
 
-      const updatedOrders = ordersData.map((order) => {
-        if (order.id === orderId) {
-          const customer = customers.find((c) => c.id === data.customer_id);
-          return {
-            ...order,
-            user_id: data.customer_id,
-            customer_name: customer?.name || order.customer_name,
-            customer_email: customer?.email || order.customer_email,
-            updated_at: new Date(),
-          };
-        }
-        return order;
+      const customerMap = customersData.reduce<Record<string, Customer>>(
+        (acc, customer) => {
+          acc[customer.id] = customer;
+          return acc;
+        },
+        {}
+      );
+
+      const ordersWithCustomerInfo = orders.map((order) => {
+        const customer = customerMap[order.user_id];
+        return {
+          ...order,
+          customer_name: customer?.name ?? "",
+          customer_email: customer?.email ?? "",
+        };
       });
 
-      setOrdersData(updatedOrders);
-      toast.success("Pedido atualizado com sucesso!");
+      setOrdersData(ordersWithCustomerInfo);
+      setCustomers(customersData);
     } catch (error) {
-      console.error("Erro ao atualizar pedido:", error);
-      toast.error("Erro ao atualizar pedido. Tente novamente.");
-    } finally {
-      setIsLoading(false);
+      handleError("Erro ao carregar dados", error);
     }
   };
 
-  const handleCreateOrder = async (data: OrderFormData) => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleSaveOrder = async () => {
     setIsLoading(true);
-
-    try {
-      const newOrder = await OrderService.createOrder(data);
-
-      setOrdersData([...ordersData, newOrder]);
-
-      toast.success("Pedido criado com sucesso!");
-      setIsCreateModalOpen(false);
-    } catch (error) {
-      console.error("Erro ao criar pedido:", error);
-      toast.error("Erro ao criar pedido. Tente novamente.");
-    } finally {
-      setIsLoading(false);
-    }
+    fetchData();
+    setIsCreateModalOpen(false);
+    setIsLoading(false);
   };
 
   const handleDeleteOrder = async (orderId: string) => {
-    setIsDeleting(orderId);
+    setIsDeleting(true);
 
     try {
       await OrderService.deleteOrder(orderId);
@@ -148,10 +107,9 @@ export function OrdersList() {
 
       toast.success("Pedido excluído com sucesso!");
     } catch (error) {
-      console.error("Erro ao deletar pedido:", error);
-      toast.error("Erro ao excluir pedido. Tente novamente.");
+      handleError("Erro ao excluir pedido", error);
     } finally {
-      setIsDeleting(null);
+      setIsDeleting(false);
     }
   };
 
@@ -243,9 +201,7 @@ export function OrdersList() {
                   </SheetHeader>
 
                   <OrderModal
-                    onSave={handleCreateOrder}
-                    isLoading={isLoading}
-                    isCreating={true}
+                    onSave={handleSaveOrder}
                   />
 
                   <SheetFooter className="gap-2">
@@ -350,10 +306,7 @@ export function OrdersList() {
 
                                 <OrderModal
                                   order={order}
-                                  onSave={(data) =>
-                                    handleSaveOrder(order.id, data)
-                                  }
-                                  isLoading={isLoading}
+                                  onSave={handleSaveOrder}
                                 />
 
                                 <SheetFooter className="gap-2">
@@ -370,13 +323,12 @@ export function OrdersList() {
 
                             {/* Modal de Confirmação de Exclusão */}
                             <Sheet
-                              open={!!orderToDelete}
-                              onOpenChange={() => setOrderToDelete(null)}>
+                              open={!!orderToDelete}>
                               <SheetTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  disabled={isDeleting === order.id}
+                                  disabled={isDeleting}
                                   onClick={() => setOrderToDelete(order)}>
                                   <TrashIcon className="h-4 w-4" />
                                   <span className="sr-only">
@@ -431,7 +383,7 @@ export function OrdersList() {
                                   <Button
                                     variant="outline"
                                     onClick={() => setOrderToDelete(null)}
-                                    disabled={isDeleting === orderToDelete?.id}>
+                                    disabled={isDeleting}>
                                     Cancelar
                                   </Button>
                                   <Button
@@ -442,8 +394,8 @@ export function OrdersList() {
                                         setOrderToDelete(null);
                                       }
                                     }}
-                                    disabled={isDeleting === orderToDelete?.id}>
-                                    {isDeleting === orderToDelete?.id
+                                    disabled={isDeleting}>
+                                    {isDeleting
                                       ? "Excluindo..."
                                       : "Excluir Pedido"}
                                   </Button>

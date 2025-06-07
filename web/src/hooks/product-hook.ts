@@ -26,14 +26,14 @@ export const ProductService = {
         return product;
     },
 
-    async updateProduct(productId: string, data: ProductFormData): Promise<Product> {
+    async updateProduct(productId: number, data: ProductFormData): Promise<Product> {
         const { data: product } = await api.put<Product>(`/products/${productId}`, data, {
             headers: authHeader(),
         });
         return product;
     },
 
-    async deleteProduct(productId: string): Promise<void> {
+    async deleteProduct(productId: number): Promise<void> {
         await api.delete(`/products/${productId}`, {
             headers: authHeader(),
         });
