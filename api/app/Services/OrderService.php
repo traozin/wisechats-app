@@ -28,7 +28,9 @@ class OrderService {
 
             [$orderItems, $total] = $this->processNewItems($data->items, $order);
 
-            OrderItem::insert($orderItems);
+            foreach ($orderItems as $itemData) {
+                OrderItem::create($itemData);
+            }
 
             $order->total = $total;
             $order->save();
@@ -54,7 +56,9 @@ class OrderService {
 
             [$orderItems, $total] = $this->processNewItems($data->items, $order);
 
-            OrderItem::insert($orderItems);
+            foreach ($orderItems as $itemData) {
+                OrderItem::create($itemData);
+            }
 
             $order->total = $total;
             $order->save();
@@ -78,7 +82,10 @@ class OrderService {
                 throw new Exception("Pedido não encontrado: {$id}");
             }
 
-            $order->items()->delete();
+            foreach ($order->items as $item) {
+                $item->delete();
+            }
+
             $result = $order->delete();
 
             DB::commit();
@@ -131,7 +138,6 @@ class OrderService {
                 'subtotal' => $subtotal,
             ];
 
-            $product->save();
         }
 
         return [$orderItems, $total];
@@ -147,6 +153,7 @@ class OrderService {
         foreach ($order->items as $oldItem) {
             $oldProduct = Product::find($oldItem->product_id);
             if ($oldProduct) {
+                $oldProduct->stock += $oldItem->quantity;
                 $oldProduct->save();
             }
         }
