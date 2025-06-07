@@ -9,5 +9,5 @@ export const api = axios.create({
 });
 
 export const authHeader = () => ({
-    Authorization: `Bearer ${Cookie.get("jwt-wisecharts")}`,
+    Authorization: `Bearer ${Cookie.get("token-wisechats")}`,
 });

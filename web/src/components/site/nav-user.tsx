@@ -77,7 +77,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onSelect={async () => {
-                Cookie.remove("jwt-wisecharts");
+                Cookie.remove("token-wisechats");
                 router.refresh();
               }}>
               <LogOutIcon />
