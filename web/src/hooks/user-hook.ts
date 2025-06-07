@@ -1,10 +1,11 @@
 import { api, authHeader } from "@/lib/api";
 import z from "zod";
-import { User } from "@/types/user";
+import { User, UserData } from "@/types/user";
 
 export const editUserSchema = z.object({
   name: z.string().nonempty("Nome é obrigatório"),
   email: z.string().email("Email inválido").nonempty("Email é obrigatório"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").nonempty("Senha é obrigatória"),
 });
 
 export type UserFormData = z.infer<typeof editUserSchema>;
@@ -40,4 +41,11 @@ export const UserService = {
     });
     return newUser;
   },
+
+  async getMe(): Promise<UserData> {
+    const { data } = await api.get<UserData>("/me", {
+      headers: authHeader(),
+    });
+    return data;
+  }
 };

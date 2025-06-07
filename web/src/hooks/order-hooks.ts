@@ -6,11 +6,11 @@ import { UserService } from "./user-hook";
 import { ProductService } from "./product-hook";
 
 export const orderSchema = z.object({
-  customer_id: z.string().min(1, "Cliente é obrigatório"),
+  user_id: z.string().min(1, "Cliente é obrigatório"),
   items: z
     .array(
       z.object({
-        product_id: z.string().min(1, "Produto é obrigatório"),
+        product_id: z.number().min(1, "Produto é obrigatório"),
         quantity: z.number().min(1, "Quantidade deve ser pelo menos 1"),
       })
     )

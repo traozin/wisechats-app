@@ -20,24 +20,36 @@ import { Customer } from "@/types/user";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { handleError } from "@/helpers/utils";
+import { toast } from "react-toastify";
 
-export function OrderModal({
-  order,
-  onSave,
-  isLoading,
-  isCreating = false,
-}: {
-  order?: Order;
-  onSave: (data: OrderFormData) => void;
-  isLoading: boolean;
-  isCreating?: boolean;
-}) {
+interface OrderModalProps {
+  order?: Order | null;
+  onSave: () => void;
+}
+
+export function OrderModal({ order, onSave }: OrderModalProps) {
+    const form = useForm<OrderFormData>({
+    resolver: zodResolver(orderSchema),
+    defaultValues: {
+      user_id: order?.user_id || "",
+      items: order?.items.map((item) => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+      })) || [{ product_id: 0, quantity: 1 }],
+    },
+  });
+
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customerOpen, setCustomerOpen] = useState(false);
@@ -45,16 +57,34 @@ export function OrderModal({
     {}
   );
 
-  const form = useForm<OrderFormData>({
-    resolver: zodResolver(orderSchema),
-    defaultValues: {
-      customer_id: order?.user_id || "",
-      items: order?.items.map((item) => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-      })) || [{ product_id: "", quantity: 1 }],
-    },
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const isCreating = !order;
+
+  const onSubmit = async (data: OrderFormData) => {
+    try {
+      const orders = {
+        user_id: data.user_id,
+        items: data.items.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+        })),
+      };
+
+      if (isCreating) {
+        OrderService.createOrder(orders);
+        toast.success("Pedido criado com sucesso!");
+      } else {
+        OrderService.updateOrder(order.id, orders);
+        toast.success("Pedido atualizado com sucesso!");
+      }
+
+      onSave();
+    } catch (error) {
+      handleError("Erro ao atualizar pedido", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -75,7 +105,7 @@ export function OrderModal({
 
   const addItem = () => {
     const currentItems = form.getValues("items");
-    form.setValue("items", [...currentItems, { product_id: "", quantity: 1 }]);
+    form.setValue("items", [...currentItems, { product_id: 0, quantity: 1 }]);
   };
 
   const removeItem = (index: number) => {
@@ -94,10 +124,10 @@ export function OrderModal({
   return (
     <div className="py-4">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
-            name="customer_id"
+            name="user_id"
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Cliente</FormLabel>
@@ -131,7 +161,7 @@ export function OrderModal({
                               value={customer.name}
                               key={customer.id}
                               onSelect={() => {
-                                form.setValue("customer_id", customer.id);
+                                form.setValue("user_id", customer.id);
                                 setCustomerOpen(false);
                               }}>
                               <Check

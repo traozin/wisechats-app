@@ -16,6 +16,7 @@ import { User } from "@/types/user";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
 import { useState } from "react";
+import { handleError } from "@/helpers/utils";
 
 interface UserFormProps {
   user?: User | null;
@@ -28,6 +29,7 @@ export function UserModal({ user, onSave }: UserFormProps) {
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
+      password: "",
     },
   });
 
@@ -39,6 +41,7 @@ export function UserModal({ user, onSave }: UserFormProps) {
       const userData = {
         name: data.name,
         email: data.email,
+        password: data.password
       };
 
       if (isCreating) {
@@ -51,15 +54,7 @@ export function UserModal({ user, onSave }: UserFormProps) {
 
       onSave();
     } catch (error: any) {
-      console.error("Erro ao salvar o usuário:", error);
-
-      if (error.response && error.response.data) {
-        const apiError = error.response.data;
-
-        toast.error(apiError.error || "Erro desconhecido ao salvar o usuário.");
-      } else {
-        toast.error("Erro inesperado. Tente novamente mais tarde.");
-      }
+      handleError("Erro ao salvar o usuário", error);
     } finally {
       setIsLoading(false);
     }
@@ -82,25 +77,44 @@ export function UserModal({ user, onSave }: UserFormProps) {
                 <FormMessage />
               </FormItem>
             )}
-          />
+            />
 
-          <FormField
+            <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="usuario@exemplo.com"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                type="email"
+                placeholder="usuario@exemplo.com"
+                {...field}
+                />
+              </FormControl>
+              <FormMessage />
               </FormItem>
             )}
-          />
+            />
+
+            <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+              <FormLabel>Senha</FormLabel>
+              <FormControl>
+                <Input
+                type="password"
+                placeholder="Digite a senha"
+                required
+                {...field}
+                />
+              </FormControl>
+              <FormMessage />
+              </FormItem>
+            )}
+            />
 
           {/* Ações */}
           <div className="flex gap-2 pt-4">
