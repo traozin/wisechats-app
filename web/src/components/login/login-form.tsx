@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { UserData } from "@/types/user";
 import Cookie from "js-cookie";
 import { useRouter } from "next/navigation";
+import { handleError } from "@/helpers/utils";
 
 type LoginFormData = {
   email: string;
@@ -43,7 +44,7 @@ export function LoginForm({
       Cookie.set("token-wisechats", response.data.token);
       router.push("/home");
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
+       handleError("Erro ao fazer login", error);
     }
   }
 
