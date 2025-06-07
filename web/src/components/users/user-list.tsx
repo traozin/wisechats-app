@@ -219,7 +219,7 @@ export function UserList() {
                           </Sheet>
 
                           {/* Modal de Edição */}
-                          <Sheet open={isModalOpen} onOpenChange={setIsModalOpen}>
+                          <Sheet>
                             <SheetTrigger asChild>
                               <Button variant="ghost" size="icon">
                                 <EditIcon className="h-4 w-4" />
