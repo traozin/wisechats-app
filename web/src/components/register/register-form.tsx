@@ -72,13 +72,13 @@ export function RegisterForm() {
         password: data.password,
       };
 
-      const response: UserData = await api.post("/users", userData);
+      const response = await api.post<UserData>("/users", userData);
 
-      if (!response) {
-        throw new Error("Erro ao criar conta", response);
+      if (!response.data) {
+        throw new Error("Erro ao criar conta");
       }
 
-      Cookie.set("jwt-wisecharts", response.data.token);
+      Cookie.set("token-wisechats", response.data.token);
       router.push("/home");
     } catch (error) {
       console.error("Erro no registro:", error);

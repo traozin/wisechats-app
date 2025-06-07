@@ -34,13 +34,13 @@ export function LoginForm({
 
   async function onSubmit(data: LoginFormData) {
     try {
-      const response: UserData = await api.post("/login", data);
+      const response = await api.post<UserData>("/login", data);
 
-      if (!response) {
-        throw new Error("Erro ao fazer login", response);
+      if (!response.data) {
+        throw new Error("Erro ao fazer login");
       }
 
-      Cookie.set("jwt-wisecharts", response.data.token);
+      Cookie.set("token-wisechats", response.data.token);
       router.push("/home");
     } catch (error) {
       console.error("Erro ao fazer login:", error);
