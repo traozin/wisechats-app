@@ -6,8 +6,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Routing\Controller;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller {
 
@@ -22,7 +22,7 @@ class AuthController extends Controller {
             return response()->json([
                 'message' => 'Dados inválidos',
                 'errors' => $validator->errors()
-                ], 422
+            ], 422
             );
         }
 
@@ -42,19 +42,30 @@ class AuthController extends Controller {
         ]);
     }
 
-    public function logout(Request $request) {
-        $request->user()->tokens()->delete();
-
-        return response()->json(['message' => 'Desconectado com sucesso']);
-    }
-
     public function me(Request $request) {
-        $user = $request->user();
-        $token = $request->bearerToken();
+        $tokenString = $request->bearerToken();
+
+        $token = PersonalAccessToken::findToken($tokenString);
+
+        if (!$token) {
+            return response()->json([
+                'message' => 'Unauthenticated.'
+            ], 401);
+        }
+
+        $user = $token->tokenable;
 
         return response()->json([
             'user' => $user,
-            'token' => $token,
+            'token' => $tokenString,
+        ]);
+    }
+
+    public function logout(Request $request) {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Desconectado com sucesso'
         ]);
     }
 }
