@@ -195,9 +195,6 @@ export function ProductList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalProducts}</div>
-            <p className="text-xs text-muted-foreground">
-              +12% em relação ao mês passado
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -214,9 +211,6 @@ export function ProductList() {
                 currency: "BRL",
               })}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Valor total em estoque
-            </p>
           </CardContent>
         </Card>
         <Card>
